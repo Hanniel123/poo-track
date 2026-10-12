@@ -14,9 +14,9 @@ def turn_slug_to_name(slug: str)->str:
     return " ".join([(v[0].upper() + v[1:]).replace('e', 'e') for v in slug.split('-')])
 
 def get_festival_day(original_date: str)-> str:
-    parsed_date = datetime(original_date)
+    parsed_date = datetime.fromisoformat(original_date)
 
     if (parsed_date.hour < 6 and parsed_date.hour >= 0):
-        parsed_date.day -= 1
+        parsed_date = parsed_date.replace(day=parsed_date.day - 1)
     return parsed_date.isoformat()
 

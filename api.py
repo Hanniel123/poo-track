@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 import config
 from handlers import *
 from utils import *
-from models import Artist
+from models import Artist, Performance
 
 app = FastAPI()
 
@@ -38,3 +38,32 @@ def get_artist(slug: str):
     if (len(result) != 1):
         raise HTTPException(status_code=404, detail="Artist not found")
     return result[0].serialize()
+
+
+@app.get('/api/programme')
+def get_program(day: str | None=None, venue: str | None=None):
+    data = parse_file(config.DATABASE_FILE)
+    performances: list[dict] = data['performances']
+    perfs = sorted([Performance(performance).serialize() for performance in performances], key=lambda a: a['festival_day'])
+    if (day):
+        perfs = [perf for perf in perfs if perf['festival_day'] == day]
+
+    if (venue):
+        perfs = [perf for perf in perfs if perf['venue'] == venue]
+
+    return perfs
+
+@app.get('/api/performances/{id}')
+def get_performance(id: str):
+    data = parse_file(config.DATABASE_FILE)
+    performances: list[Performance] =[Performance(performance) for performance in data['performances']]
+    result = [performance for performance in performances if performance.id == id]
+    if (len(result) == 0):
+        raise HTTPException(status_code=404, detail="Performance not found")
+    return result[0].serialize()
+
+
+
+# Serve frontend
+app.frontend('/', directory='web/public/')
+app.frontend('/admin', directory='web/admin/')
