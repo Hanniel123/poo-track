@@ -62,6 +62,24 @@ def get_performance(id: str):
         raise HTTPException(status_code=404, detail="Performance not found")
     return result[0].serialize()
 
+@app.get('/api/now')
+def now(at: str=datetime.now().isoformat(timespec='minutes')):
+    at_date = datetime.fromisoformat(at)
+    data = parse_file(config.DATABASE_FILE)
+    performances: list[Performance] =[Performance(performance) for performance in data['performances']]
+    on_stage: list[Performance] = []
+    up_next: list[Performance] = []
+
+    for performance in performances:
+        if (at_date >= datetime.fromisoformat(performance.start) and at_date < datetime.fromisoformat(performance.end)):
+            on_stage.append(performance)
+        if (at_date >= datetime.fromisoformat(performance.end) and len(up_next) < 3):
+            up_next.append(performance)
+    return {
+        'at': at,
+        'now_playing': [p.serialize() for p in on_stage],
+        'up_next': [p.serialize() for p in up_next]
+    }
 
 
 # Serve frontend

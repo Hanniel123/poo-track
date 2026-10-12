@@ -30,7 +30,7 @@ class Performance:
         self.title = data['title']
         self.venue = data['venue']
         self.start = data['start']
-        # self.end = data['end']
+
         self.duration_minutes = data['duration_minutes']
         self.description = data['description']
 
@@ -85,6 +85,10 @@ class Performance:
             return max(0, self.max_participants - len(self.participants))
         return None
 
+    @property
+    def artists(self):
+        return []
+
     def serialize(self):
         response = {
             'id': self.id,
@@ -97,7 +101,8 @@ class Performance:
             'duration_minutes': self.duration_minutes,
             'festival_day': self.festival_day,
             'description': self.description,
-            'summary': self.description
+            'summary': self.description,
+            'artists': self.artists
         }
         if (self.kind == 'workshop'):
             response['capacity'] = self.max_participants
