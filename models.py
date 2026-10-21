@@ -1,10 +1,51 @@
 from utils import *
 from datetime import timedelta
-import math
-# from typing import Optional
-# from pydantic import BaseModel
+from abc import ABC, abstractmethod
 
-class Artist:
+class BaseObjectModel(ABC):
+
+    @abstractmethod
+    def serialize(self):
+        pass
+
+    @abstractmethod
+    def update(self, data: dict):
+        pass
+
+    @abstractmethod
+    def dumbs(self)-> dict:
+        pass
+
+class Venue(BaseObjectModel):
+
+    def __init__(self, data: dict):
+        self.name = data['name']
+        self.capacity = data['capacity']
+        self.address = data['address']
+
+    @property
+    def slug(self):
+        return turn_name_to_slug(self.name)
+
+
+    def serialize(self):
+        return {
+            'slug': self.slug,
+            'name': self.name,
+            'capacity': self.capacity,
+            'address': self.address
+        }
+
+    def update(self, data):
+        for key in data.keys:
+            if (not key in ['name', 'capacity', 'address']):
+                return
+        self.__init__(data)
+
+    def dumbs(self):
+        return self.serialize()
+    
+class Artist(BaseObjectModel):
 
     def __init__(self, data: dict):
         self.name = data['name']
@@ -23,8 +64,20 @@ class Artist:
             'slug': self.slug
         }
 
+    def update(self, data):
+        for key in data.keys:
+            if (not key in ['name', 'bio', 'photo_url', 'slug']):
+                return
+        self.__init__(data)
 
-class Performance:
+    def dumbs(self):
+        return {
+            'name': self.name,
+            'bio': self.bio,
+            'photo_url': self.photo_url
+        }
+
+class Performance(BaseObjectModel):
     def __init__(self, data: dict):
         self.kind = data['kind']
         self.title = data['title']
@@ -38,6 +91,7 @@ class Performance:
             case 'solo':
                 self.artist = data['artist']
                 self.min_age = data['min_age']
+                
 
             case 'lineup':
                 self.host = data['host']
@@ -107,4 +161,31 @@ class Performance:
         if (self.kind == 'workshop'):
             response['capacity'] = self.max_participants
         return response
-    
+
+    def dumbs(self):
+        payload = {
+            'kind': self.kind,
+            'title': self.title,
+            'venue': self.venue,
+            'start': self.start,
+            'duration_minutes': self.duration_minutes,
+            'description': self.description,
+        }
+        match (self.kind):
+            case 'solo':
+                payload['artist'] = self.artist
+                payload['min_age'] = self.min_age
+            case 'lineup':
+                payload['host'] = self.host
+                payload['acts'] = self.acts
+            case 'workshop':
+                payload['teacher'] = self.teacher
+                payload['max_participants'] = self.max_participants
+                payload['participants'] = self.participants
+        return payload
+
+    def update(self, data):
+        for key in data.keys():
+            if (not key in ['kind', 'title', 'venue', 'start', 'duration_minutes', 'description']):
+                return
+        self.__init__(data)

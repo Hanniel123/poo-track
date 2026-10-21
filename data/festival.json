@@ -84,6 +84,11 @@
       "name": "Élodie Marchal",
       "bio": "Stand-up about sport, failure and trying again.",
       "photo_url": ""
+    },
+    {
+      "name": "Fred Larson",
+      "bio": "",
+      "photo_url": ""
     }
   ],
   "performances": [
@@ -356,6 +361,33 @@
         "ines-moreau",
         "max-pellerin",
         "jeanne-aubry"
+      ]
+    },
+    {
+      "kind": "lineup",
+      "title": "Comedy Night",
+      "venue": "grand-casino",
+      "start": "2027-06-12T20:30",
+      "duration_minutes": 90,
+      "description": "An evening with several comedians.",
+      "host": "paul-kerbrat",
+      "acts": [
+        "nora-lebrun",
+        "hugo-lemaire"
+      ]
+    },
+    {
+      "kind": "workshop",
+      "title": "Improvisation Workshop",
+      "venue": "la-cabane",
+      "start": "2027-06-13T10:30",
+      "duration_minutes": 120,
+      "description": "A workshop for beginners.",
+      "teacher": "ines-moreau",
+      "max_participants": 10,
+      "participants": [
+        "Camille R.",
+        "Yanis B."
       ]
     }
   ]

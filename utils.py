@@ -7,8 +7,14 @@ def parse_file(file: str)-> dict:
     f.close()
     return json.loads(file_content)
 
+
+def write_in_file(file: str, data: str):
+    with open(file, 'w') as f:
+        f.write(data)
+    
+
 def turn_name_to_slug(name: str)->str:
-    return "-".join(name.lower().split(' ')).replace('é', 'e').replace('è', 'e')
+    return "-".join(name.lower().split(' ')).replace('é', 'e').replace('è', 'e').replace('à', 'a').replace('â', 'a')
 
 def turn_slug_to_name(slug: str)->str:
     return " ".join([(v[0].upper() + v[1:]).replace('e', 'e') for v in slug.split('-')])
