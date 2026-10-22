@@ -318,6 +318,37 @@ def delete_performance(id: str, response: Response):
         raise HTTPException(500, detail="Failed to update database")
 
 
+@app.post('/api/performances/{id}/participants')
+def add_participants(id: str, form: ParticipantModel, response: Response):
+    data = storage.data()
+
+    # Get performance
+    performances = [Performance(p) for p in data['performances']]
+    target_perfs = list( filter(lambda x: x.id == id, performances))
+
+    if (len(target_perfs) == 0):
+        raise HTTPException(404, detail="Invalid performance id")
+    target_perf = target_perfs[0]
+
+    # Check if this performance is a workshop and if this feat requirements
+    if (target_perf.kind != 'workshop'):
+        raise HTTPException(409, detail="This performance isn't a workshop.")
+    if (len(target_perf.participants) == target_perf.max_participants):
+        raise HTTPException(409, detail="Workshop full.")
+    if (form.name.lstrip() in target_perf.participants):
+        raise HTTPException(409, detail="Participant already added.")
+
+    # Update
+    target_perf.participants.append(form.name)
+    newPerformances = [p.dumbs() if (p.id != target_perf.id) else target_perf.dumbs() for p in performances]
+    data['performances'] = newPerformances
+
+    try:
+        storage.update(data)
+        response.status_code = status.HTTP_201_CREATED
+        return target_perf.serialize()
+    except Exception as e:
+        logError(e, "Database update error")
 
     
     

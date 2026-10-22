@@ -98,8 +98,8 @@ class Performance(BaseObjectModel):
                 self.acts = data['acts']
             case 'workshop':
                 self.teacher = data['teacher']
-                self.max_participants = data['max_participants']
-                self.participants = data['participants']
+                self.max_participants: int = data['max_participants']
+                self.participants: list[str] = data['participants']
 
         
 
