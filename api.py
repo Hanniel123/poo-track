@@ -39,11 +39,15 @@ def get_artists():
 def get_artist(slug: str):
     data = storage.data()
     artists: list[Artist] = [Artist(a) for a in data['artists']]
+    performances = [Performance(p) for p in data['performances']]
 
     result = [art for art in artists if art.slug == slug]
     if (len(result) != 1):
         raise HTTPException(status_code=404, detail="Artist not found")
-    return result[0].serialize()
+    target_artist = result[0]
+    serialized_result = target_artist.serialize()
+    serialized_result['performances'] = get_artist_performances(performances, target_artist)
+    return serialized_result
 
 
 @app.get('/api/programme')
@@ -63,10 +67,17 @@ def get_program(day: str | None=None, venue: str | None=None):
 def get_performance(id: str):
     data = storage.data()
     performances: list[Performance] =[Performance(performance) for performance in data['performances']]
+    venues = list[Venue] = [Venue(v) for v in data['venues']]
     result = [performance for performance in performances if performance.id == id]
     if (len(result) == 0):
         raise HTTPException(status_code=404, detail="Performance not found")
-    return result[0].serialize()
+    serialized_data = result[0].serialize()
+    venue_result = list(filter(lambda u: turn_name_to_slug(u.name) == serialized_data['venue'], venues))
+    if (len(venue_result) == 0):
+        serialized_data['capacity'] = 0
+    else:
+        serialized_data['capacity'] = venue_result[0].capacity
+    return serialized_data
 
 @app.get('/api/now')
 def now(at: str=datetime.now().isoformat(timespec='minutes')):
@@ -79,7 +90,7 @@ def now(at: str=datetime.now().isoformat(timespec='minutes')):
     for performance in performances:
         if (at_date >= datetime.fromisoformat(performance.start) and at_date < datetime.fromisoformat(performance.end)):
             on_stage.append(performance)
-        if (at_date >= datetime.fromisoformat(performance.end) and len(up_next) < 3):
+        if (at_date > datetime.fromisoformat(performance.end) and len(up_next) < 3):
             up_next.append(performance)
     return {
         'at': at,
@@ -110,7 +121,7 @@ def add_performance(performance: PerformanceModel, response: Response):
 
     # Check venu
     venues: list[Venue]  = [Venue(venue) for venue in data['venues']]
-
+    performances = [Performance(pf) for pf in data['performances']]
     found_venue: None | Venue = None
     for v in venues:
         if (v.slug == performance.venue):
@@ -182,6 +193,11 @@ def add_performance(performance: PerformanceModel, response: Response):
                 'max_participants': performance.max_participants,
                 'participants': performance.participants
             }
+
+    # Check id unicity
+    p = Performance(perf)
+    if len(list( filter(lambda x: x.id == p.id, performances))) > 0:
+        raise HTTPException(409, detail="Performance already exists.")
 
     # Update database
     data['performances'].append(perf)
@@ -280,6 +296,12 @@ def edit_performance(performance: PerformanceModel, id: str):
                 'max_participants': performance.max_participants,
                 'participants': performance.participants
             }
+    p = Performance(perf)
+    if p.id != id and any(existing.id == p.id for existing in performances):
+        raise HTTPException(
+            status_code=409,
+            detail="Performance already exists."
+        )
 
     # Update database
     target_perf.update(perf)

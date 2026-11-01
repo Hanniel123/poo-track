@@ -89,15 +89,15 @@ class Performance(BaseObjectModel):
 
         match (self.kind):
             case 'solo':
-                self.artist = data['artist']
+                self.artist: str = data['artist']
                 self.min_age = data['min_age']
                 
 
             case 'lineup':
-                self.host = data['host']
-                self.acts = data['acts']
+                self.host: str = data['host']
+                self.acts: list[str] = data['acts']
             case 'workshop':
-                self.teacher = data['teacher']
+                self.teacher: str = data['teacher']
                 self.max_participants: int = data['max_participants']
                 self.participants: list[str] = data['participants']
 
@@ -106,7 +106,7 @@ class Performance(BaseObjectModel):
     @property
     def id(self):
         formatted_time = ''.join(self.start[11:].split(':'))
-        return f'{turn_name_to_slug(self.title)}-{self.start[:10]}-{formatted_time}'
+        return f'{self.venue}-{self.start[:10]}-{formatted_time}'
 
     @property
     def end(self):
@@ -141,7 +141,23 @@ class Performance(BaseObjectModel):
 
     @property
     def artists(self):
-        return []
+        match self.kind:
+            case 'solo':
+                slugs = [self.artist]
+            case 'lineup':
+                slugs = [self.host, *self.acts]
+            case 'workshop':
+                slugs = [self.teacher]
+            case _:
+                slugs = []
+
+        return [
+            {
+                'slug': slug,
+                'name': turn_slug_to_name(slug)
+            }
+            for slug in slugs
+        ]
 
     def serialize(self):
         response = {
@@ -156,10 +172,23 @@ class Performance(BaseObjectModel):
             'festival_day': self.festival_day,
             'description': self.description,
             'summary': self.description,
-            'artists': self.artists
+            'artists': []
         }
+        # response['capacity'] = self.max_participants
         if (self.kind == 'workshop'):
-            response['capacity'] = self.max_participants
+            response['places_left'] = self.places_left
+            response['teacher'] = self.teacher
+            # Make participants
+            if (self.participants != None):
+                response['participants'] = [ turn_slug_to_name(p) for p in self.participants]
+
+        elif (self.kind == 'solo'):
+            response['artist'] = self.artist
+            response['min_age'] = self.min_age
+        elif (self.kind == 'lineup'):
+            response['host'] = self.host
+            response['acts'] = self.acts
+            
         return response
 
     def dumbs(self):
@@ -185,7 +214,28 @@ class Performance(BaseObjectModel):
         return payload
 
     def update(self, data):
-        for key in data.keys():
-            if (not key in ['kind', 'title', 'venue', 'start', 'duration_minutes', 'description']):
-                return
+        common_fields = {
+            'kind',
+            'title',
+            'venue',
+            'start',
+            'duration_minutes',
+            'description'
+        }
+
+        specific_fields = {
+            'solo': {'artist', 'min_age'},
+            'lineup': {'host', 'acts'},
+            'workshop': {
+                'teacher',
+                'max_participants',
+                'participants'
+            }
+        }
+
+        allowed_fields = common_fields | specific_fields.get(data.get('kind'), set())
+
+        if not set(data).issubset(allowed_fields):
+            return
+
         self.__init__(data)

@@ -25,4 +25,3 @@ def get_festival_day(original_date: str)-> str:
     if (parsed_date.hour < 6 and parsed_date.hour >= 0):
         parsed_date = parsed_date.replace(day=parsed_date.day - 1)
     return parsed_date.isoformat()
-
